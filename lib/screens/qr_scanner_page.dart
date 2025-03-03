@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/machine.dart';
+import '../models/user.dart';
+import '../services/machine_service.dart';
+import '../services/user_service.dart';
+import '../services/notification_service.dart';
 import '../utils/constants.dart';
 
 class QRScannerPage extends StatefulWidget {
@@ -12,6 +16,11 @@ class QRScannerPage extends StatefulWidget {
 class _QRScannerPageState extends State<QRScannerPage> with SingleTickerProviderStateMixin {
   bool _isFlashOn = false;
   bool _isScanning = true;
+
+  // Servisler (gerçek uygulamada uygun şekilde başlatılmalıdır)
+  final MachineService _machineService = MachineService();
+  final UserService _userService = UserService();
+  final NotificationService _notificationService = NotificationService();
 
   late AnimationController _animationController;
   late Animation<double> _scanAnimation;
@@ -40,33 +49,185 @@ class _QRScannerPageState extends State<QRScannerPage> with SingleTickerProvider
     super.dispose();
   }
 
-  // Simülasyon - gerçek uygulamada QR okuma kütüphanesi kullanılacak
-  void _simulateQRScanned(int machineId) {
+  // QR Kodu işleme fonksiyonu - Ana algoritma burada
+  void _handleQRScan(String qrCode) {
     setState(() {
       _isScanning = false;
     });
 
-    // QR kod okunduğunda kullanıcıya bildir
+    // QR kodundan makine ID'sini çıkar
+    final machineId = _extractMachineIdFromQR(qrCode);
+
+    // Makineyi bul
+    final machine = _machineService.getMachineById(int.parse(machineId));
+
+    if (machine != null) {
+      if (machine.status == MachineStatus.inUse) {
+        // Makine kullanımdaysa, kullanıcı bilgilerini getir
+        final user = _userService.getUserByActiveMachine(machineId);
+        if (user != null) {
+          // Kullanıcı bilgilerini göster
+          _showUserInfoDialog(machine, user);
+        } else {
+          _showErrorMessage("Kullanıcı bilgisi bulunamadı");
+        }
+      } else if (machine.status == MachineStatus.available) {
+        // Makine boşsa, kullanmak istiyor musunuz diye sor
+        _showUseMachineConfirmation(machine);
+      } else {
+        // Makine arızalıysa bilgi ver
+        _showErrorMessage("Bu makine şu anda arızalı durumda");
+      }
+    } else {
+      _showErrorMessage("Geçersiz QR kod");
+    }
+  }
+
+  // QR kodundan makine ID'sini çıkarır
+  String _extractMachineIdFromQR(String qrCode) {
+    // Gerçek uygulamada QR kodunun formatına göre uyarlanmalı
+    // Örnek format: "MACHINE:123"
+    if (qrCode.startsWith("MACHINE:")) {
+      return qrCode.split(":")[1];
+    }
+    return qrCode; // Basit demo için direkt makine ID'si döndürülüyor
+  }
+
+  // Hata mesajı gösterme
+  void _showErrorMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('QR Kod tarandı: Çamaşır Makinesi $machineId'),
-        backgroundColor: AppColors.success,
-        duration: const Duration(seconds: 1),
+        content: Text(message),
+        backgroundColor: AppColors.error,
       ),
     );
 
-    // Ana sayfaya dön ve simüle edilmiş veri ile makineyi kullanıma al
-    Future.delayed(const Duration(seconds: 1), () {
-      // Simüle edilmiş makine verisi
-      final scannedMachine = Machine(
-        id: machineId,
-        name: 'Çamaşır Makinesi $machineId',
-        status: MachineStatus.available,
-        type: MachineType.washer,
-      );
-
-      Navigator.pop(context, scannedMachine);
+    // Kısa bir gecikme sonrası taramayı yeniden etkinleştir
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          _isScanning = true;
+        });
+      }
     });
+  }
+
+  // Kullanıcı bilgilerini gösteren dialog
+  void _showUserInfoDialog(Machine machine, User user) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("${machine.name} Kullanım Bilgisi"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Kullanıcı: ${user.fullName}"),
+            Text("Oda No: ${user.roomNumber ?? 'Belirtilmemiş'}"),
+            Text("Başlangıç: 14:30"), // Gerçek uygulamada machine.startTime olacak
+            Text("Tahmini Bitiş: ${machine.endTime}"),
+            Text("Kalan Süre: ${machine.remainingMinutes ?? '?'} dakika"),
+            const Divider(),
+            const Text("Acil bir durum olduğunda kullanıcıya bildirim gönderilebilir.")
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                _isScanning = true;
+              });
+            },
+            child: const Text("Kapat"),
+          ),
+          TextButton(
+            onPressed: () => _sendNotificationToUser(user.id),
+            child: const Text("Bildirim Gönder"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Kullanıcıya acil durum bildirimi gönder
+  void _sendNotificationToUser(String userId) {
+    _notificationService.sendEmergencyNotification(
+        userId,
+        "Çamaşırınızla ilgili bir mesaj var",
+        "Çamaşırhanenin diğer kullanıcılarından biri sizinle iletişime geçmek istiyor."
+    );
+    Navigator.pop(context);
+    setState(() {
+      _isScanning = true;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Bildirim gönderildi")),
+    );
+  }
+
+  // Makine kullanımı onay dialogu
+  void _showUseMachineConfirmation(Machine machine) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(AppTexts.confirmUse),
+        content: Text('${machine.name} ${AppTexts.confirmUseMessage}'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                _isScanning = true;
+              });
+            },
+            child: const Text(AppTexts.cancel),
+          ),
+          TextButton(
+            onPressed: () {
+              _useMachine(machine);
+              Navigator.pop(context);
+            },
+            child: const Text(AppTexts.start),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Makine kullanımı başlatma
+  void _useMachine(Machine machine) {
+    // Burada makine kullanımı başlatma API çağrısı yapılacak
+    // Şimdilik demo amaçlı simüle ediliyor
+    final updatedMachine = machine.copyWith(
+      status: MachineStatus.inUse,
+      isUsersMachine: true,
+      endTime: '16:30', // Simüle edilmiş bitiş zamanı
+      remainingMinutes: 40,
+    );
+
+    // Makine ve kullanıcı bilgilerini güncelle
+    _machineService.updateMachine(updatedMachine);
+    _userService.addActiveMachine(updatedMachine.id.toString());
+
+    // Kullanıcıya bildirim ayarlarına göre hatırlatıcı planla
+    final currentUser = _userService.getCurrentUser();
+    if (currentUser != null && currentUser.reminderEnabled == true) {
+      _notificationService.scheduleReminder(
+          currentUser,
+          updatedMachine,
+          currentUser.reminderMinutes ?? 10
+      );
+    }
+
+    // Ana sayfaya başarı mesajıyla dön
+    Navigator.pop(context, updatedMachine);
+  }
+
+  // Simülasyon için QR tarama
+  void _simulateQRScanned(int machineId) {
+    final qrCode = "MACHINE:$machineId";
+    _handleQRScan(qrCode);
   }
 
   @override
@@ -202,7 +363,7 @@ class _QRScannerPageState extends State<QRScannerPage> with SingleTickerProvider
             ),
           ),
 
-          // Simüle QR Tarama Butonları
+          // Simüle QR Tarama Butonları - Demo amaçlı
           Positioned(
             bottom: 150,
             left: 0,
@@ -230,6 +391,26 @@ class _QRScannerPageState extends State<QRScannerPage> with SingleTickerProvider
                 color: Colors.white,
               ),
             ),
+          ),
+
+          // Kullanımda olan makine simülasyonu için buton
+          Positioned(
+            bottom: 210,
+            left: 0,
+            right: 0,
+            child: _isScanning ? Center(
+              child: ElevatedButton(
+                onPressed: () => _simulateQRScanned(3), // Makine 3 kullanımda olacak şekilde kurgulandı
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.warning,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+                child: const Text('Kullanımdaki Makine Tarama'),
+              ),
+            ) : const SizedBox.shrink(),
           ),
         ],
       ),

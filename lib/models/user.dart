@@ -10,6 +10,15 @@ class User {
   final String? profileInitials;
   final int? usageCount;
 
+  // Yeni özellikler - hatırlatıcı ve bildirim tercihleri
+  final bool? reminderEnabled;
+  final int? reminderMinutes;
+  final bool? notificationsEnabled;
+
+  // İstatistik özellikleri
+  final Map<String, int>? usageStats; // Örneğin: {'washer': 15, 'dryer': 8}
+  final DateTime? lastUsageDate;
+
   User({
     required this.id,
     required this.studentId,
@@ -20,6 +29,11 @@ class User {
     this.activeMachineIds,
     this.profileInitials,
     this.usageCount,
+    this.reminderEnabled = true,
+    this.reminderMinutes = 10,
+    this.notificationsEnabled = true,
+    this.usageStats,
+    this.lastUsageDate,
   });
 
   /// Mock verilerden kullanıcı objesi oluşturma
@@ -34,6 +48,15 @@ class User {
       activeMachineIds: List<String>.from(json['activeMachineIds'] ?? []),
       profileInitials: json['profileInitials'] ?? _getInitials(json['fullName']),
       usageCount: json['usageCount'],
+      reminderEnabled: json['reminderEnabled'] ?? true,
+      reminderMinutes: json['reminderMinutes'] ?? 10,
+      notificationsEnabled: json['notificationsEnabled'] ?? true,
+      usageStats: json['usageStats'] != null
+          ? Map<String, int>.from(json['usageStats'])
+          : null,
+      lastUsageDate: json['lastUsageDate'] != null
+          ? DateTime.parse(json['lastUsageDate'])
+          : null,
     );
   }
 
@@ -49,6 +72,11 @@ class User {
       'activeMachineIds': activeMachineIds,
       'profileInitials': profileInitials ?? _getInitials(fullName),
       'usageCount': usageCount,
+      'reminderEnabled': reminderEnabled,
+      'reminderMinutes': reminderMinutes,
+      'notificationsEnabled': notificationsEnabled,
+      'usageStats': usageStats,
+      'lastUsageDate': lastUsageDate?.toIso8601String(),
     };
   }
 
@@ -80,6 +108,11 @@ class User {
     List<String>? activeMachineIds,
     String? profileInitials,
     int? usageCount,
+    bool? reminderEnabled,
+    int? reminderMinutes,
+    bool? notificationsEnabled,
+    Map<String, int>? usageStats,
+    DateTime? lastUsageDate,
   }) {
     return User(
       id: id ?? this.id,
@@ -91,6 +124,23 @@ class User {
       activeMachineIds: activeMachineIds ?? this.activeMachineIds,
       profileInitials: profileInitials ?? this.profileInitials,
       usageCount: usageCount ?? this.usageCount,
+      reminderEnabled: reminderEnabled ?? this.reminderEnabled,
+      reminderMinutes: reminderMinutes ?? this.reminderMinutes,
+      notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+      usageStats: usageStats ?? this.usageStats,
+      lastUsageDate: lastUsageDate ?? this.lastUsageDate,
+    );
+  }
+
+  /// Kullanım istatistiklerini artırma
+  User incrementUsageStats(String machineType) {
+    final newStats = Map<String, int>.from(usageStats ?? {});
+    newStats[machineType] = (newStats[machineType] ?? 0) + 1;
+
+    return copyWith(
+      usageStats: newStats,
+      usageCount: (usageCount ?? 0) + 1,
+      lastUsageDate: DateTime.now(),
     );
   }
 }
