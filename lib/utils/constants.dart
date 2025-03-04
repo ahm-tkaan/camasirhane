@@ -66,6 +66,41 @@ class AppTexts {
   static const String cancel = 'İptal';
   static const String start = 'Başlat';
   static const String usageStarted = 'kullanımı başlatıldı!';
+
+  // Yeni Eklemeler
+  static const String viewUserInfo = 'Kullanıcı Bilgisi';
+  static const String programSelection = 'Program Seçin';
+  static const String quickWash = 'Hızlı Yıkama (30 dk)';
+  static const String normalWash = 'Normal Yıkama (45 dk)';
+  static const String heavyWash = 'Yoğun Yıkama (65 dk)';
+  static const String ecoWash = 'Ekonomik Yıkama (55 dk)';
+  static const String quickDry = 'Hızlı Kurutma (25 dk)';
+  static const String normalDry = 'Normal Kurutma (40 dk)';
+  static const String intenseDry = 'Yoğun Kurutma (60 dk)';
+  static const String reminderEnabled = 'Çamaşır bitmeden önce hatırlat';
+  static const String reminderDescription = 'Çamaşırınız bitmeden {0} dakika önce bildirim alacaksınız';
+  static const String outOfOrder = 'Arızalı';
+  static const String reportIssue = 'Arıza Bildir';
+  static const String reportIssueConfirm = 'Bu makineyi arızalı olarak işaretlemek istediğinize emin misiniz?';
+  static const String issueReported = 'Arıza bildirimi alındı. Yetkililer bilgilendirildi.';
+  static const String notifyWhenDone = 'Bitince Bildir';
+  static const String reminderScheduled = 'Hatırlatıcı zaten planlandı. Ayarlardan değiştirebilirsiniz.';
+  static const String notificationSent = 'Bildirim gönderildi';
+  static const String emergencyNotification = 'Çamaşırınızla ilgili bir mesaj var';
+  static const String emergencyNotificationBody = 'Çamaşırhanenin diğer kullanıcılarından biri sizinle iletişime geçmek istiyor.';
+  static const String userNotFound = 'Kullanıcı bilgisi bulunamadı';
+
+  // Yoğunluk Grafiği
+  static const String occupancyTitle = 'Günlük Yoğunluk Tahmini';
+  static const String occupancyDescription = 'Aşağıdaki grafik, çamaşırhanenin saat bazlı tahmini doluluk oranını göstermektedir.';
+  static const String bestHours = 'Önerilen en uygun saatler:';
+  static const String notifyWhenAvailable = 'Müsait Olduğunda Bildir';
+  static const String notifyWhenAvailableSuccess = 'Çamaşırhane müsait olduğunda size bildirim gönderilecek.';
+  static const String busy = 'Dolu';
+  static const String availableLabel = 'Müsait';
+  static const String lowOccupancy = 'Az Yoğun';
+  static const String mediumOccupancy = 'Orta Yoğun';
+  static const String highOccupancy = 'Çok Yoğun';
 }
 
 /// Uygulama animasyonları için süreler
