@@ -15,7 +15,7 @@ class UserService {
     id: 'current-user-id',
     studentId: '123456789',
     fullName: 'Ahmet Kaan Çelenk',
-    phoneNumber: '0544 516 40 39',
+    phoneNumber: '0555 555 55 55',
     dormitoryId: 'dorm1',
     roomNumber: 'C - 203',
     activeMachineIds: ['3'],
