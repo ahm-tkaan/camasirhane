@@ -40,6 +40,20 @@ class Machine {
   final DateTime? lastMaintenanceDate; // Son bakım tarihi
   final int? usageCount;       // Toplam kullanım sayısı
 
+  // Yeni Eklenen Alanlar - Admin için
+  final String? serialNumber;  // Seri numarası
+  final String? model;         // Model
+  final String? manufacturer;  // Üretici
+  final DateTime? installationDate; // Kurulum tarihi
+  final DateTime? purchaseDate;    // Satın alma tarihi
+  final DateTime? warrantyEndDate; // Garanti bitiş tarihi
+  final String? location;       // Konum (Örn: "1. Kat", "A Blok")
+  final String? lastMaintenanceBy; // Son bakımı yapan teknisyen
+  final String? maintenanceNotes;  // Bakım notları
+  final List<DateTime>? maintenanceDates; // Tüm bakım tarihleri
+  final int? errorCount;       // Toplam hata sayısı
+  final bool? isActive;        // Aktif/pasif durumu
+
   Machine({
     required this.id,
     required this.name,
@@ -56,6 +70,19 @@ class Machine {
     this.isNotifiedOnComplete = false,
     this.lastMaintenanceDate,
     this.usageCount,
+    // Yeni Eklenen Alanlar
+    this.serialNumber,
+    this.model,
+    this.manufacturer,
+    this.installationDate,
+    this.purchaseDate,
+    this.warrantyEndDate,
+    this.location,
+    this.lastMaintenanceBy,
+    this.maintenanceNotes,
+    this.maintenanceDates,
+    this.errorCount,
+    this.isActive = true,
   });
 
   /// Mock verilerden makine objesi oluşturma
@@ -86,6 +113,29 @@ class Machine {
           ? DateTime.parse(json['lastMaintenanceDate'])
           : null,
       usageCount: json['usageCount'],
+      // Yeni Eklenen Alanlar
+      serialNumber: json['serialNumber'],
+      model: json['model'],
+      manufacturer: json['manufacturer'],
+      installationDate: json['installationDate'] != null
+          ? DateTime.parse(json['installationDate'])
+          : null,
+      purchaseDate: json['purchaseDate'] != null
+          ? DateTime.parse(json['purchaseDate'])
+          : null,
+      warrantyEndDate: json['warrantyEndDate'] != null
+          ? DateTime.parse(json['warrantyEndDate'])
+          : null,
+      location: json['location'],
+      lastMaintenanceBy: json['lastMaintenanceBy'],
+      maintenanceNotes: json['maintenanceNotes'],
+      maintenanceDates: json['maintenanceDates'] != null
+          ? (json['maintenanceDates'] as List)
+          .map((date) => DateTime.parse(date))
+          .toList()
+          : null,
+      errorCount: json['errorCount'],
+      isActive: json['isActive'] ?? true,
     );
   }
 
@@ -107,6 +157,19 @@ class Machine {
       'isNotifiedOnComplete': isNotifiedOnComplete,
       'lastMaintenanceDate': lastMaintenanceDate?.toIso8601String(),
       'usageCount': usageCount,
+      // Yeni Eklenen Alanlar
+      'serialNumber': serialNumber,
+      'model': model,
+      'manufacturer': manufacturer,
+      'installationDate': installationDate?.toIso8601String(),
+      'purchaseDate': purchaseDate?.toIso8601String(),
+      'warrantyEndDate': warrantyEndDate?.toIso8601String(),
+      'location': location,
+      'lastMaintenanceBy': lastMaintenanceBy,
+      'maintenanceNotes': maintenanceNotes,
+      'maintenanceDates': maintenanceDates?.map((date) => date.toIso8601String()).toList(),
+      'errorCount': errorCount,
+      'isActive': isActive,
     };
   }
 
@@ -127,6 +190,19 @@ class Machine {
     bool? isNotifiedOnComplete,
     DateTime? lastMaintenanceDate,
     int? usageCount,
+    // Yeni Eklenen Alanlar
+    String? serialNumber,
+    String? model,
+    String? manufacturer,
+    DateTime? installationDate,
+    DateTime? purchaseDate,
+    DateTime? warrantyEndDate,
+    String? location,
+    String? lastMaintenanceBy,
+    String? maintenanceNotes,
+    List<DateTime>? maintenanceDates,
+    int? errorCount,
+    bool? isActive,
   }) {
     return Machine(
       id: id ?? this.id,
@@ -144,6 +220,19 @@ class Machine {
       isNotifiedOnComplete: isNotifiedOnComplete ?? this.isNotifiedOnComplete,
       lastMaintenanceDate: lastMaintenanceDate ?? this.lastMaintenanceDate,
       usageCount: usageCount ?? this.usageCount,
+      // Yeni Eklenen Alanlar
+      serialNumber: serialNumber ?? this.serialNumber,
+      model: model ?? this.model,
+      manufacturer: manufacturer ?? this.manufacturer,
+      installationDate: installationDate ?? this.installationDate,
+      purchaseDate: purchaseDate ?? this.purchaseDate,
+      warrantyEndDate: warrantyEndDate ?? this.warrantyEndDate,
+      location: location ?? this.location,
+      lastMaintenanceBy: lastMaintenanceBy ?? this.lastMaintenanceBy,
+      maintenanceNotes: maintenanceNotes ?? this.maintenanceNotes,
+      maintenanceDates: maintenanceDates ?? this.maintenanceDates,
+      errorCount: errorCount ?? this.errorCount,
+      isActive: isActive ?? this.isActive,
     );
   }
 
@@ -244,14 +333,73 @@ class Machine {
       isUsersMachine: false,
       userId: null,
       remainingMinutes: null,
+      errorCount: (errorCount ?? 0) + 1, // Arıza sayısını artır
     );
   }
 
   /// Bakımdan sonra kullanıma hazırla
   Machine markAsServiced() {
+    // Mevcut bakım tarihlerini al ve yeni tarihi ekle
+    final List<DateTime> updatedMaintenanceDates = List.from(maintenanceDates ?? []);
+    updatedMaintenanceDates.add(DateTime.now());
+
     return copyWith(
       status: MachineStatus.available,
       lastMaintenanceDate: DateTime.now(),
+      maintenanceDates: updatedMaintenanceDates,
     );
+  }
+
+  /// Garanti durumunu kontrol et
+  bool isUnderWarranty() {
+    if (warrantyEndDate == null) return false;
+    return DateTime.now().isBefore(warrantyEndDate!);
+  }
+
+  /// Son bakımdan bu yana geçen gün sayısını hesapla
+  int? getDaysSinceLastMaintenance() {
+    if (lastMaintenanceDate == null) return null;
+    return DateTime.now().difference(lastMaintenanceDate!).inDays;
+  }
+
+  /// Bakım gerekli mi kontrol et (son bakımdan 90 gün geçmişse)
+  bool isMaintenanceRequired() {
+    final daysSinceLastMaintenance = getDaysSinceLastMaintenance();
+    if (daysSinceLastMaintenance == null) return true; // Hiç bakım yapılmamışsa
+    return daysSinceLastMaintenance > 90; // 3 aydan fazla olduysa
+  }
+
+  /// Makine sağlık puanı hesapla (0-100 arası)
+  int calculateHealthScore() {
+    if (status == MachineStatus.outOfOrder) return 0;
+
+    int baseScore = 100;
+
+    // Arıza sayısı puanı düşürür
+    if (errorCount != null && errorCount! > 0) {
+      baseScore -= errorCount! * 5; // Her arıza 5 puan düşürür
+    }
+
+    // Son bakımdan uzun zaman geçmişse puanı düşür
+    final daysSinceLastMaintenance = getDaysSinceLastMaintenance();
+    if (daysSinceLastMaintenance != null) {
+      if (daysSinceLastMaintenance > 90) {
+        baseScore -= 20; // 3 aydan fazla ise 20 puan düşür
+      } else if (daysSinceLastMaintenance > 60) {
+        baseScore -= 10; // 2 aydan fazla ise 10 puan düşür
+      }
+    } else {
+      baseScore -= 30; // Hiç bakım yapılmamışsa 30 puan düşür
+    }
+
+    // Kullanım sayısına göre puan düşür (çok kullanılmış makineler daha riskli)
+    if (usageCount != null && usageCount! > 1000) {
+      baseScore -= 15; // 1000'den fazla kullanım varsa 15 puan düşür
+    } else if (usageCount != null && usageCount! > 500) {
+      baseScore -= 5; // 500'den fazla kullanım varsa 5 puan düşür
+    }
+
+    // Sınırla
+    return baseScore.clamp(0, 100);
   }
 }

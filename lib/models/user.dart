@@ -19,6 +19,12 @@ class User {
   final Map<String, int>? usageStats; // Örneğin: {'washer': 15, 'dryer': 8}
   final DateTime? lastUsageDate;
 
+  // Admin tarafından yönetim için yeni özellikler
+  final bool isActive; // Hesabın aktif olup olmadığı
+  final DateTime? createdAt; // Hesabın oluşturulma tarihi
+  final String? createdBy; // Hesabı oluşturan admin ID'si
+  final DateTime? lastLoginDate; // Son giriş tarihi
+
   User({
     required this.id,
     required this.studentId,
@@ -34,6 +40,10 @@ class User {
     this.notificationsEnabled = true,
     this.usageStats,
     this.lastUsageDate,
+    this.isActive = true,
+    this.createdAt,
+    this.createdBy,
+    this.lastLoginDate,
   });
 
   /// Mock verilerden kullanıcı objesi oluşturma
@@ -57,6 +67,14 @@ class User {
       lastUsageDate: json['lastUsageDate'] != null
           ? DateTime.parse(json['lastUsageDate'])
           : null,
+      isActive: json['isActive'] ?? true,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : null,
+      createdBy: json['createdBy'],
+      lastLoginDate: json['lastLoginDate'] != null
+          ? DateTime.parse(json['lastLoginDate'])
+          : null,
     );
   }
 
@@ -77,6 +95,10 @@ class User {
       'notificationsEnabled': notificationsEnabled,
       'usageStats': usageStats,
       'lastUsageDate': lastUsageDate?.toIso8601String(),
+      'isActive': isActive,
+      'createdAt': createdAt?.toIso8601String(),
+      'createdBy': createdBy,
+      'lastLoginDate': lastLoginDate?.toIso8601String(),
     };
   }
 
@@ -113,6 +135,10 @@ class User {
     bool? notificationsEnabled,
     Map<String, int>? usageStats,
     DateTime? lastUsageDate,
+    bool? isActive,
+    DateTime? createdAt,
+    String? createdBy,
+    DateTime? lastLoginDate,
   }) {
     return User(
       id: id ?? this.id,
@@ -129,6 +155,10 @@ class User {
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       usageStats: usageStats ?? this.usageStats,
       lastUsageDate: lastUsageDate ?? this.lastUsageDate,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt ?? this.createdAt,
+      createdBy: createdBy ?? this.createdBy,
+      lastLoginDate: lastLoginDate ?? this.lastLoginDate,
     );
   }
 
@@ -141,6 +171,13 @@ class User {
       usageStats: newStats,
       usageCount: (usageCount ?? 0) + 1,
       lastUsageDate: DateTime.now(),
+    );
+  }
+
+  /// Kullanıcının son giriş tarihini güncelle
+  User updateLastLogin() {
+    return copyWith(
+      lastLoginDate: DateTime.now(),
     );
   }
 }

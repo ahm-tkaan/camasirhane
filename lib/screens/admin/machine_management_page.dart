@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../models/machine.dart';
-import '../../services/admin_service.dart';
-import '../../services/machine_service.dart';
-import '../../utils/constants.dart';
-import 'maintenance_schedule_page.dart';
+import '../../../models/machine.dart';
+import '../../../services/admin_service.dart';
+import '../../../services/machine_service.dart';
+import '../../../utils/constants.dart';
+import '../maintenance_schedule_page.dart';
 
 class MachineManagementPage extends StatefulWidget {
   const MachineManagementPage({Key? key}) : super(key: key);

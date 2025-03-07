@@ -531,7 +531,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
           // Makine Yönetimi
           if (_currentAdmin!.hasPermission(AdminPermission.manageMachines))
             ListTile(
-              leading: const Icon(Icons.washing_machine),
+              leading: const Icon(Icons.local_laundry_service, color: Colors.white)
+              ,
               title: const Text('Makine Yönetimi'),
               onTap: () {
                 Navigator.pop(context); // Drawer'ı kapat

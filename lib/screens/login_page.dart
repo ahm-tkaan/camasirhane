@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import '../services/admin_service.dart';
+import '../services/user_service.dart';
 import '../utils/constants.dart';
 import 'home_page.dart';
+import 'admin/admin_home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -16,8 +19,13 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   bool _isPasswordVisible = false;
+  bool _isAdminLogin = false; // Öğrenci veya admin girişi seçimi
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+
+  // Servisler
+  final UserService _userService = UserService();
+  final AdminService _adminService = AdminService();
 
   @override
   void initState() {
@@ -55,16 +63,84 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
         _isLoading = true;
       });
 
-      // 2 saniye sonra login işlemini tamamla (gerçek uygulamada API isteği olacak)
+      // Admin girişi
+      if (_isAdminLogin) {
+        _loginAsAdmin();
+      }
+      // Öğrenci girişi
+      else {
+        _loginAsStudent();
+      }
+    }
+  }
+
+  // Admin olarak giriş
+  void _loginAsAdmin() {
+    try {
+      // Admin servisi üzerinden giriş dene
+      _adminService.setCurrentAdmin(
+          _studentIdController.text,
+          _passwordController.text
+      );
+
+      // Başarılı ise admin ana sayfasına yönlendir
       Timer(AppDurations.longAnimation, () {
         setState(() {
           _isLoading = false;
         });
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
+          MaterialPageRoute(builder: (context) => const AdminHomePage()),
         );
       });
+    } catch (e) {
+      // Hata durumunda kullanıcıya göster
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Hata: ${e.toString()}'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  // Öğrenci olarak giriş
+  void _loginAsStudent() {
+    try {
+      // Kullanıcı servisi üzerinden giriş dene
+      final user = _userService.login(
+          _studentIdController.text,
+          _passwordController.text
+      );
+
+      if (user != null) {
+        // Başarılı ise öğrenci ana sayfasına yönlendir
+        Timer(AppDurations.longAnimation, () {
+          setState(() {
+            _isLoading = false;
+          });
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomePage()),
+          );
+        });
+      } else {
+        throw Exception('Geçersiz kullanıcı adı veya şifre');
+      }
+    } catch (e) {
+      // Hata durumunda kullanıcıya göster
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Hata: ${e.toString()}'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
@@ -107,8 +183,12 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                     ),
                     const SizedBox(height: 36.0),
 
-                    // Öğrenci No
-                    _buildStudentIdField(),
+                    // Kullanıcı tipi seçimi (Admin/Öğrenci)
+                    _buildUserTypeSelection(),
+                    const SizedBox(height: 24.0),
+
+                    // Kullanıcı adı / Öğrenci No
+                    _buildUserIdField(),
                     const SizedBox(height: 16.0),
 
                     // Şifre
@@ -150,21 +230,99 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     );
   }
 
-  // Öğrenci No alanı
-  Widget _buildStudentIdField() {
+  // Kullanıcı tipi seçim widget'ı
+  Widget _buildUserTypeSelection() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.inputBackground,
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: Row(
+        children: [
+          // Öğrenci seçeneği
+          Expanded(
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  _isAdminLogin = false;
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12.0),
+                decoration: BoxDecoration(
+                  color: !_isAdminLogin ? AppColors.primary : Colors.transparent,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(8.0),
+                    bottomLeft: Radius.circular(8.0),
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    'Öğrenci Girişi',
+                    style: TextStyle(
+                      color: !_isAdminLogin ? Colors.white : AppColors.textSecondary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14.0,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Admin seçeneği
+          Expanded(
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  _isAdminLogin = true;
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12.0),
+                decoration: BoxDecoration(
+                  color: _isAdminLogin ? AppColors.primary : Colors.transparent,
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(8.0),
+                    bottomRight: Radius.circular(8.0),
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    'Personel Girişi',
+                    style: TextStyle(
+                      color: _isAdminLogin ? Colors.white : AppColors.textSecondary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14.0,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Öğrenci No / Kullanıcı adı alanı
+  Widget _buildUserIdField() {
+    final String labelText = _isAdminLogin ? 'Kullanıcı Adı' : 'Öğrenci No';
+    final IconData iconData = _isAdminLogin ? Icons.person : Icons.badge_outlined;
+
     return TextFormField(
       controller: _studentIdController,
-      keyboardType: TextInputType.number,
-      decoration: const InputDecoration(
+      keyboardType: _isAdminLogin ? TextInputType.text : TextInputType.number,
+      decoration: InputDecoration(
         filled: true,
         fillColor: AppColors.inputBackground,
-        hintText: AppTexts.studentIdHint,
-        prefixIcon: Icon(Icons.person_outline),
+        hintText: labelText,
+        prefixIcon: Icon(iconData),
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Lütfen öğrenci numaranızı girin';
-        } else if (value.length < 6) {
+          return 'Lütfen $labelText girin';
+        } else if (!_isAdminLogin && value.length < 6) {
           return 'Öğrenci numarası en az 6 karakter olmalıdır';
         }
         return null;
@@ -208,6 +366,8 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
 
   // Giriş butonu
   Widget _buildLoginButton() {
+    final String buttonText = _isAdminLogin ? 'Personel Girişi' : 'Öğrenci Girişi';
+
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
@@ -221,7 +381,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
             strokeWidth: 2,
           ),
         )
-            : const Text(AppTexts.loginButton),
+            : Text(buttonText),
       ),
     );
   }
