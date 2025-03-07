@@ -692,7 +692,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
               child: _buildStatCard(
                 title: 'Toplam Makine',
                 value: '${_dashboardStats['totalMachines'] ?? 0}',
-                icon: Icons.washing_machine,
+                icon: Icons.local_laundry_service,
                 color: AppColors.primary,
               ),
             ),

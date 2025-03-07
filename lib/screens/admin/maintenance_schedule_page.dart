@@ -699,10 +699,15 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
     if (machine == null) return;
 
     DateTime selectedDate = schedule.scheduledDate;
-    Admin? selectedTechnician = _technicians.firstWhere(
-          (t) => t.id == schedule.technicianId,
-      orElse: () => _technicians.isNotEmpty ? _technicians.first : null,
-    );
+    Admin? selectedTechnician;
+    if (_technicians.isNotEmpty) {
+      selectedTechnician = _technicians.firstWhere(
+              (t) => t.id == schedule.technicianId,
+          orElse: () => _technicians.first
+      );
+    } else {
+      selectedTechnician = null;
+    }
     final notesController = TextEditingController(text: schedule.notes);
 
     showDialog(

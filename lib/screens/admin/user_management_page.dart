@@ -359,8 +359,10 @@ class _UserManagementPageState extends State<UserManagementPage> {
     // Form alanlarını temizle
     _studentIdController.clear();
     _nameController.clear();
-    _phoneController.clear_dormitoryController.clear();
-    _roomController.clear();
+_phoneController.clear();
+_dormitoryController.clear();
+_roomController.clear();
+_roomController.clear();
 
     showDialog(
       context: context,

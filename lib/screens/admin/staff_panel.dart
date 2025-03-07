@@ -194,7 +194,7 @@ class _StaffPanelState extends State<StaffPanel> with SingleTickerProviderStateM
     child: _buildStatsCard(
     title: 'Toplam',
     value: _totalMachines.toString(),
-    icon: Icons.washing_machine,
+    icon: Icons.local_laundry_service,
     color: Colors.grey,
     subtitle: 'Makine',
     ),
@@ -773,7 +773,7 @@ class _StaffPanelState extends State<StaffPanel> with SingleTickerProviderStateM
                   } else if (selectedDormitory != null) {
                     // Belirli bir yurda duyuru gönder
                     _notificationService.sendNotificationToDormitory(
-                      selectedDormitory,
+                      selectedDormitory ?? '',
                       titleController.text,
                       messageController.text,
                     );
@@ -1094,7 +1094,7 @@ class _StaffPanelState extends State<StaffPanel> with SingleTickerProviderStateM
                   if (selectedDormitory != null) {
                     // Belirli bir yurttaki kullanıcılara mesaj gönder
                     _notificationService.sendNotificationToDormitory(
-                      selectedDormitory,
+                      selectedDormitory ?? '',
                       titleController.text,
                       messageController.text,
                     );
